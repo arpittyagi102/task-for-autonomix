@@ -1,51 +1,76 @@
-'use client';
-export default function Home() {
-    function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-        event.preventDefault();
-        const formData = new FormData(event.currentTarget);
-        const transcript = formData.get("transcript") as string;
-        if (!transcript) {
-            alert("Please enter a call transcript.");
+'use client'
+import { motion } from "framer-motion";
+import { Loader } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+
+export default function PAGE() {
+    const [buttonStatus, setButtonStatus] = useState("Get Started");
+    const [serverStatus, setServerStatus] = useState("loading");
+    const API_URL = process.env.NEXT_PUBLIC_API_URL;
+    const router = useRouter();
+
+    useEffect(() => {
+        bootupBackend();
+    }, []);
+
+    useEffect(() => {
+        if (serverStatus === "ready" && (buttonStatus === "loading" || buttonStatus === "Ready to Go")) {
+            router.push('/transcript');
+        }
+    }, [serverStatus, buttonStatus]);
+
+
+    async function bootupBackend() {
+        if (!API_URL) {
+            setButtonStatus("Backend API_URL is not set in env");
             return;
         }
-        fetch("http://localhost:5000/ai/getActionItems", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ transcript }),
-        })
-            .then((response) => {
-                if (!response.ok) {
-                    throw new Error("Network response was not ok");
+
+        try {
+            const response = await fetch(API_URL);
+            if (response.ok) {
+                if (buttonStatus === "loading") {
+                    router.push("/transcript");
+                } else {
+                    console.log("button status after api call", buttonStatus)
                 }
-                return response.json();
-            })
-            .then((data) => {
-                console.log("Action Items:", data.actionItems);
-                alert("Action items retrieved successfully! Check console for details.");
-            })
-            .catch((error) => {
-                console.error("Error fetching action items:", error);
-                alert("Failed to retrieve action items. Please try again.");
-            });
-    }            
+                setServerStatus("ready")
+                setButtonStatus("Ready to Go")
+            } else {
+                setButtonStatus("Not able to connect to Backend");
+            }
+        } catch (e) {
+            console.log(e)
+            setButtonStatus("Error connecting to Backend");
+        }
+    }
+
+
+    function handleClick() {
+        if (serverStatus == "loading") {
+            setButtonStatus("loading");
+        } else if (serverStatus == "ready") {
+            router.push('/transcript');
+        }
+    }
 
     return (
-        <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-            <form onSubmit={handleSubmit}>
-                <textarea
-                    className="border border-gray-300 p-2 rounded-md"
-                    placeholder="Enter call transcript"
-                    name="transcript"
-                />
-                <button
-                    type="submit"
-                    className="mt-2 bg-blue-500 text-white p-2 rounded-md"
-                >
-                    Get Action Items
-                </button>
-            </form>
-        </div>
-    );
+        <section className="border-grid h-screen flex items-center justify-center">
+            <div className="container flex flex-col items-center gap-5 py-8 text-center md:py-16 lg:py-20 xl:gap-4">
+
+                <h1 className="font-extrabold text-3xl  md:text-7xl p-5 text-transparent bg-clip-text bg-gradient-to-t to-white/90 from-white/10">
+                    Get Things Done Faster
+                </h1>
+
+                <p className="text-neutral-500 max-w-3xl text-base text-balance tex-xs md:text-lg">
+                    Convert your transcript into meaningful and actionable items, and beautiful charts
+                </p>
+
+                <motion.button onClick={handleClick} className="border bg-gradient-to-l hover:bg-gradient-to-r to-purple-500/40 from-indigo-500/10 text-lg px-10 py-2 rounded-full">
+                    {buttonStatus == "loading" ? <span className="flex gap-5">Loading <Loader className="-mb-5 animate-spin" /></span> : buttonStatus}
+                </motion.button>
+            </div>
+        </section>
+    )
 }
