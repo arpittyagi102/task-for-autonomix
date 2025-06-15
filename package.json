@@ -1,0 +1,14 @@
+{
+    "name": "task-for-autonomix",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "client": "npm run dev --prefix client",
+        "server": "npm run dev --prefix server",
+        "install-all": "npm install && cd frontend && npm install && cd ../backend && npm install"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC"
+}
